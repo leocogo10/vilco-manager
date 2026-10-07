@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vilco Manager | Panel Interno</title>
+    <style>
+        :root {
+            --bg-main: #121214;
+            --bg-card: #1A1A1E;
+            --border: #2A2A30;
+            --primary: #FF5E1A;
+            --primary-hover: #e04d12;
+            --secondary: #E5A83B;
+            --text-main: #ECECF1;
+            --text-muted: #9A9A9E;
+            --radius: 12px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        body { background-color: var(--bg-main); color: var(--text-main); display: flex; height: 100vh; overflow: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: 260px; background-color: var(--bg-card); border-right: 1px solid var(--border); padding: 20px; display: flex; flex-direction: column; gap: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: var(--primary); text-align: center; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .logo span { color: var(--text-main); font-size: 14px; display: block; font-weight: normal; color: var(--text-muted); }
+        .menu-btn { background: none; border: none; color: var(--text-main); text-align: left; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-size: 15px; transition: 0.3s; display: flex; align-items: center; gap: 10px; }
+        .menu-btn:hover, .menu-btn.active { background-color: var(--primary); color: white; font-weight: bold; }
+
+        /* Main Content */
+        .main-content { flex: 1; padding: 40px; overflow-y: auto; }
+        .header { margin-bottom: 30px; }
+        .header h1 { font-size: 28px; color: var(--secondary); }
+        .header p { color: var(--text-muted); margin-top: 5px; }
+
+        /* Sections */
+        .section { display: none; animation: fadeIn 0.4s ease-in-out; }
+        .section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Cards & Forms */
+        .card { background-color: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 8px; color: var(--text-muted); font-size: 14px; }
+        input, select, textarea { width: 100%; padding: 12px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--bg-main); color: var(--text-main); font-size: 15px; outline: none; }
+        input:focus, textarea:focus { border-color: var(--primary); }
+        button.btn-primary { background-color: var(--primary); color: white; border: none; padding: 12px 20px; border-radius: 8px; cursor: pointer; font-size: 15px; font-weight: bold; width: 100%; transition: 0.3s; }
+        button.btn-primary:hover { background-color: var(--primary-hover); }
+        
+        /* Strategy Output */
+        .output-box { background-color: var(--bg-main); border-left: 4px solid var(--secondary); padding: 15px; border-radius: 4px; margin-top: 15px; font-size: 14px; white-space: pre-wrap; }
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        /* Quick Replies */
+        .reply-item { display: flex; justify-content: space-between; align-items: center; background-color: var(--bg-main); padding: 15px; border-radius: 8px; margin-bottom: 10px; border: 1px solid var(--border); }
+        .reply-text { flex: 1; font-size: 14px; color: var(--text-muted); }
+        .btn-copy { background-color: var(--border); color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 12px; margin-left: 15px; }
+        .btn-copy:hover { background-color: var(--secondary); color: black; }
+
+    </style>
+</head>
+<body>
+
+    <!-- Menú Lateral -->
+    <nav class="sidebar">
+        <div class="logo">🔥 VILCO <span>Marketing Manager</span></div>
+        <button class="menu-btn active" onclick="showSection('estrategia')">📢 Estrategia & Copys</button>
+        <button class="menu-btn" onclick="showSection('respuestas')">💬 Respuestas Rápidas</button>
+        <button class="menu-btn" onclick="showSection('cotizador')">💲 Cotizador Eventos</button>
+    </nav>
+
+    <!-- Contenido Principal -->
+    <main class="main-content">
+        
+        <!-- SECCIÓN 1: ESTRATEGIA Y COPYS -->
+        <section id="estrategia" class="section active">
+            <div class="header">
+                <h1>Generador Dinámico de Copys</h1>
+                <p>Ingresá el plato o evento que querés promocionar para generar tu estrategia de Meta Ads e Instagram.</p>
+            </div>
+
+            <div class="grid-2">
+                <!-- Ingreso de datos -->
+                <div class="card">
+                    <h3>¿Qué vamos a promocionar hoy?</h3>
+                    <br>
+                    <div class="form-group">
+                        <label>Tipo de Contenido</label>
+                        <select id="tipoContenido">
+                            <option value="Parrilla">Parrilla y Cortes a la leña</option>
+                            <option value="Plato Especial">Platos Especiales / Menú Ejecutivo</option>
+                            <option value="Evento">Eventos en Salón</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Descripción rápida (Ej: Asado de tira humeante)</label>
+                        <input type="text" id="descContenido" placeholder="Describí la foto o el video...">
+                    </div>
+                    <button class="btn-primary" onclick="generarEstrategia()">✨ Generar Estrategia</button>
+                </div>
+
+                <!-- Resultados -->
+                <div class="card" id="resultadoEstrategia" style="display: none; max-height: 500px; overflow-y: auto;">
+                    <h3 style="color: var(--secondary)">Resultados de la IA</h3>
+                    
+                    <h4 style="margin-top: 15px; color: var(--primary);">📲 Copy Orgánico (Instagram)</h4>
+                    <div class="output-box" id="outOrganico"></div>
+
+                    <h4 style="margin-top: 15px; color: var(--primary);">🎯 Meta Ads - Pruebas A/B</h4>
+                    <div class="output-box" id="outMeta"></div>
+
+                    <h4 style="margin-top: 15px; color: var(--primary);">🎬 Ganchos para Reels</h4>
+                    <div class="output-box" id="outReels"></div>
+
+                    <h4 style="margin-top: 15px; color: var(--primary);">👥 Segmentación Sugerida</h4>
+                    <div class="output-box">Laborde + 30km (Monte Maíz, Pascanas, Escalante).<br>Edades: 22 a 60 años.<br>Intereses: Asado, Parrilladas, Salidas a comer.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 2: RESPUESTAS RÁPIDAS -->
+        <section id="respuestas" class="section">
+            <div class="header">
+                <h1>Plantillas de Respuestas</h1>
+                <p>Respuestas listas para copiar y pegar en WhatsApp o Instagram DM.</p>
+            </div>
+            <div class="card">
+                <div class="reply-item">
+                    <div class="reply-text" id="rep1">¡Hola! 👋 Qué lindo que nos escribas. Te cuento que para este fin de semana tenemos disponibilidad. ¿Para cuántas personas te gustaría reservar y qué día preferís? 🥩🔥</div>
+                    <button class="btn-copy" onclick="copiarTexto('rep1')">Copiar</button>
+                </div>
+                <div class="reply-item">
+                    <div class="reply-text" id="rep2">¡Hola! Para eventos en nuestro salón, manejamos opciones de Parrilla Libre o Menú Formal. El precio por cubierto varía según el servicio de bebida. ¿Para cuántos invitados aprox sería el evento? 🎉</div>
+                    <button class="btn-copy" onclick="copiarTexto('rep2')">Copiar</button>
+                </div>
+                <div class="reply-item">
+                    <div class="reply-text" id="rep3">Estamos ubicados en Dr. Senestrari, Doctor Mattea &, Laborde. ¡Te esperamos para disfrutar del mejor asado a la leña! 📍🔥</div>
+                    <button class="btn-copy" onclick="copiarTexto('rep3')">Copiar</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECCIÓN 3: COTIZADOR -->
+        <section id="cotizador" class="section">
+            <div class="header">
+                <h1>Cotizador de Eventos</h1>
+                <p>Calculadora rápida de presupuestos para el salón.</p>
+            </div>
+            <div class="card" style="max-width: 500px;">
+                <div class="form-group">
+                    <label>Cantidad de Invitados</label>
+                    <input type="number" id="invitados" value="50">
+                </div>
+                <div class="form-group">
+                    <label>Tipo de Menú</label>
+                    <select id="precioMenu">
+                        <option value="15000">Parrilla Libre ($15.000 x per)</option>
+                        <option value="18000">Menú 3 Pasos ($18.000 x per)</option>
+                    </select>
+                </div>
+                <button class="btn-primary" onclick="calcularPresupuesto()">Calcular Total</button>
+                <div class="output-box" id="resultadoPresupuesto" style="display: none; font-size: 18px; font-weight: bold; text-align: center; color: var(--secondary);"></div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        // Función para cambiar de pestañas
+        function showSection(sectionId) {
+            document.querySelectorAll('.section').forEach(sec => sec.classList.remove('active'));
+            document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+            
+            document.getElementById(sectionId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        // Función para copiar texto (WhatsApp/DM)
+        function copiarTexto(elementId) {
+            let texto = document.getElementById(elementId).innerText;
+            navigator.clipboard.writeText(texto).then(() => {
+                alert("¡Texto copiado listo para pegar en WhatsApp!");
+            });
+        }
+
+        // Función Cotizador
+        function calcularPresupuesto() {
+            let invitados = document.getElementById("invitados").value;
+            let precio = document.getElementById("precioMenu").value;
+            let total = invitados * precio;
+            let resBox = document.getElementById("resultadoPresupuesto");
+            resBox.style.display = "block";
+            resBox.innerHTML = `Total Estimado: $${total.toLocaleString('es-AR')}`;
+        }
+
+        // Función Simulada de IA (Generador de Estrategia)
+        function generarEstrategia() {
+            let tipo = document.getElementById("tipoContenido").value;
+            let desc = document.getElementById("descContenido").value;
+            
+            if(!desc) { alert("Por favor ingresá una descripción breve."); return; }
+
+            document.getElementById("resultadoEstrategia").style.display = "block";
+            
+            // Textos simulados que varían según el input
+            document.getElementById("outOrganico").innerText = `¡Se encienden los fuegos en Vilco! 🔥 Hoy sale: ${desc}.\n\nVení a disfrutar de la mejor experiencia gastronómica.\n👉 Reservá tu mesa por WhatsApp en el link de nuestra bio.\n\n#VilcoLaborde #ParrillaArgentina #Laborde #MonteMaiz`;
+            
+            document.getElementById("outMeta").innerText = `Opción A (Emocional): Nada une más a la familia que un buen asado. Mirá este ${desc}. Etiquetá con quién lo compartirías.\n\nOpción B (Directa): ¿Antojo de carne a la leña? Hoy te preparamos: ${desc}. Mesas limitadas.\n\nOpción C (Urgencia): ¡Últimas mesas para este fin de semana! Vení a probar nuestro ${desc}. Reservá ahora.`;
+            
+            document.getElementById("outReels").innerText = `Gancho 1: "Si sos de Laborde, tenés que probar esto..." (Texto en pantalla + plano cerrado del plato).\n\nGancho 2: "El secreto detrás de nuestro ${desc}..." (Plano rápido de las brasas).\n\nGancho 3: "¿Buscando dónde comer este finde?" (Transición rápida al salón).`;
+        }
+    </script>
+</body>
+</html>
