@@ -208,7 +208,7 @@ textarea { min-height:130px; resize:vertical; }
       <div class="vp-main-inner">
         <header class="vp-head">
           <div><div class="vp-kicker">Mesa de Trabajo</div><div class="vp-title">Vilco · Laborde</div><div class="vp-date" id="vp-today"></div></div>
-          <div class="vp-actions"><button class="vp-btn" type="button" onclick="vpOpenAI()">Asistente Vilco</button><button class="vp-btn" type="button" onclick="vpRefreshRealData()">Actualizar datos reales</button><button class="vp-btn vp-btn-gold" type="button" onclick="document.getElementById('vp-file-input').click()">+ Cargar contenido</button></div>
+          <div class="vp-actions"><button class="vp-btn" type="button" onclick="vpRefreshRealData()">Actualizar datos reales</button><button class="vp-btn vp-btn-gold" type="button" onclick="document.getElementById('vp-file-input').click()">+ Cargar contenido</button></div>
         </header>
 
         <section class="vp-section">
@@ -225,7 +225,7 @@ textarea { min-height:130px; resize:vertical; }
 
         <section class="vp-section">
           <div class="vp-section-head"><h3>Biblioteca de fotos y videos</h3><small id="vp-library-count">0 archivos guardados</small></div>
-          <div class="vp-drop" id="vp-drop"><strong>Soltá fotos o videos acá</strong><span>Arrastrá desde tu PC o seleccioná archivos.</span><input id="vp-file-input" type="file" accept="image/*,video/*" multiple><label class="vp-pick" for="vp-file-input">Seleccionar archivos</label></div>
+          <div class="vp-drop" id="vp-drop"><strong>Soltá fotos o videos acá</strong><span>Subí el material y después elegí “Preparar con Meta AI” en la tarjeta para adaptarlo a la identidad de Vilco.</span><input id="vp-file-input" type="file" accept="image/*,video/*" multiple><div style="display:flex;justify-content:center;gap:8px;flex-wrap:wrap"><label class="vp-pick" for="vp-file-input">Seleccionar archivos</label><button class="vp-pick" type="button" style="background:transparent;cursor:pointer" onclick="vpOpenAI()">Abrir ventana Meta AI</button></div></div>
           <div class="vp-filters" id="vp-filters">
             <button class="vp-filter active" data-vpf="Todos">Todos (20)</button>
             <button class="vp-filter" data-vpf="Por revisar">Por revisar</button>
@@ -268,25 +268,26 @@ textarea { min-height:130px; resize:vertical; }
 </div>
 
 <aside class="vp-drawer" id="panel-meta-ai">
-  <div class="vp-drawer-head"><div><h3>Asistente Vilco activo - Datos reales conectados</h3><p>Trabaja con los datos reales de @vilco.laborde y el material cargado.</p></div><button class="vp-drawer-close" type="button" onclick="vpCloseAI()">×</button></div>
-  <div class="vp-ai-body"><div class="vp-ai-grid">
-    <button class="vp-ai-btn" type="button" onclick="vpOpenMaterialAI()"><strong>Trabajar material</strong><span>Seleccioná una foto o video y preparalo con IA</span></button>
-    <button class="vp-ai-btn" type="button" onclick="vpRunAI('Hook')"><strong>Hook</strong><span>Basado en 230 likes</span></button>
-    <button class="vp-ai-btn" type="button" onclick="vpRunAI('Caption seria')"><strong>Caption seria</strong><span>Texto con tono premium y gastronómico</span></button>
-    <button class="vp-ai-btn" type="button" onclick="vpRunAI('Hashtags Laborde')"><strong>Hashtags Laborde</strong><span>Preparados para la pieza</span></button>
-    <button class="vp-ai-btn" type="button" onclick="vpRunAI('Audio sugerido')"><strong>Audio sugerido</strong><span>Dirección de audio para Reel</span></button>
-  </div><div class="vp-ai-output" id="vp-ai-output">Elegí una herramienta para trabajar el contenido.</div>
-    <div id="vp-ai-material" style="display:none;margin-top:14px;padding:13px;border:1px solid var(--vp-line);background:#0d0d0d;border-radius:9px">
-      <div style="color:#777;font-size:9px;text-transform:uppercase;letter-spacing:.12em">Material seleccionado</div>
-      <div id="vp-ai-file-name" style="margin-top:7px;color:#ddd;font-size:11px">Todavía no seleccionaste un archivo.</div>
-      <div style="margin-top:10px"><textarea id="vp-ai-prompt" placeholder="Ej.: preparame una idea de Reel premium para promocionar los sábados de Vilco..."></textarea></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px">
-        <button class="vp-ai-btn" type="button" onclick="vpUseMaterialAI('Concepto')"><strong>Concepto</strong><span>Idea central de la pieza</span></button>
-        <button class="vp-ai-btn" type="button" onclick="vpUseMaterialAI('Guion')"><strong>Guion</strong><span>Inicio, desarrollo y cierre</span></button>
-        <button class="vp-ai-btn" type="button" onclick="vpUseMaterialAI('Copy')"><strong>Copy</strong><span>Texto para publicar</span></button>
-        <button class="vp-ai-btn" type="button" onclick="vpUseMaterialAI('CTA')"><strong>CTA</strong><span>Llamado a reservar o consultar</span></button>
-      </div>
+  <div class="vp-drawer-head"><div><h3>Meta AI · Contenido para Vilco</h3><p>Prepará el pedido con el estilo, los servicios y el público de tu local.</p></div><button class="vp-drawer-close" type="button" onclick="vpCloseAI()">×</button></div>
+  <div class="vp-ai-body">
+    <div style="padding:12px;border:1px solid var(--vp-line);background:#0d0d0d;border-radius:9px;color:#aaa;font-size:10px;line-height:1.65;margin-bottom:12px"><strong style="color:var(--vp-gold)">Perfil de marca aplicado</strong><br>Vilco · Laborde. Parrilla, restaurant y eventos. Sábados 21 hs, pastas, pescados y elaborados, salón para 100 personas, catering y barra. Tono gastronómico, cálido, cuidado y auténtico; objetivo: generar reservas y consultas por eventos.</div>
+    <div class="vp-ai-grid">
+      <button class="vp-ai-btn" type="button" onclick="vpOpenMetaAI()"><strong>Abrir Meta AI</strong><span>Se abre Meta AI en otra pestaña para trabajar el archivo</span></button>
+      <button class="vp-ai-btn" type="button" onclick="vpPrepareBrandPrompt()"><strong>Preparar instrucciones de Vilco</strong><span>Crear un prompt listo para copiar y pegar</span></button>
     </div>
+    <div id="vp-ai-material" style="display:block;margin-top:14px;padding:13px;border:1px solid var(--vp-line);background:#0d0d0d;border-radius:9px">
+      <div style="color:#777;font-size:9px;text-transform:uppercase;letter-spacing:.12em">Material seleccionado</div>
+      <div id="vp-ai-file-name" style="margin-top:7px;color:#ddd;font-size:11px">Todavía no seleccionaste un archivo. Primero subilo en “Soltá fotos o videos acá”.</div>
+      <div style="margin-top:10px"><label for="vp-ai-prompt" style="display:block;color:#777;font-size:9px;margin-bottom:7px">¿Qué querés lograr con esta pieza?</label><textarea id="vp-ai-prompt" placeholder="Ej.: editá esta foto para promocionar los sábados de Vilco, sin cambiar la comida ni inventar elementos..."></textarea></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:8px">
+        <button class="vp-ai-btn" type="button" onclick="vpSetTask('Mejorar la pieza visual sin cambiar el producto real')"><strong>Mejorar imagen</strong><span>Indicaciones de edición</span></button>
+        <button class="vp-ai-btn" type="button" onclick="vpSetTask('Crear una idea de Reel con gancho, secuencia y cierre')"><strong>Idea de Reel</strong><span>Guion breve para Instagram</span></button>
+        <button class="vp-ai-btn" type="button" onclick="vpSetTask('Escribir un copy natural con llamado a reservar')"><strong>Copy y reserva</strong><span>Texto para publicar</span></button>
+        <button class="vp-ai-btn" type="button" onclick="vpSetTask('Adaptar la pieza para promocionar eventos, catering o barra')"><strong>Promocionar eventos</strong><span>Eventos, catering y barra</span></button>
+      </div>
+      <button class="vp-ai-btn" type="button" style="width:100%;margin-top:8px" onclick="vpCopyBrandPrompt()"><strong>Copiar instrucciones para Meta AI</strong><span>Después adjuntá el archivo en Meta AI y pegá el texto</span></button>
+    </div>
+    <div class="vp-ai-output" id="vp-ai-output">Importante: esta ventana prepara el contexto de Vilco, pero no transmite archivos automáticamente a Meta AI. Abrí Meta AI, adjuntá allí la foto o el video y pegá las instrucciones copiadas.</div>
   </div>
 </aside>
 <div class="vp-toast" id="vp-toast"></div>
@@ -421,12 +422,12 @@ function vpRender(){
     {title:"Parrilla",meta:"Producto · fuego · experiencia",badge:"Por revisar",type:"Por revisar"},
     {title:"Eventos",meta:"Salón 100p · catering · barra",badge:"Listo",type:"Listo"}
   ];
-  cards=cards.concat(vpState.uploaded.map(function(f){return {title:f.name,meta:f.kind+" · "+vpBytes(f.size),badge:"Por revisar",type:"Por revisar",file:f}}));
+  cards=cards.concat(vpState.uploaded.map(function(f,index){return {title:f.name,meta:f.kind+" · "+vpBytes(f.size),badge:"Por revisar",type:"Por revisar",file:f,uploadIndex:index}}));
   if(vpState.filter!=="Todos")cards=cards.filter(function(c){return c.type===vpState.filter});
   if(!cards.length){root.innerHTML='<div style="grid-column:1/-1;padding:28px;color:#666;text-align:center">No hay piezas para este filtro.</div>';return}
   root.innerHTML=cards.map(function(c){
     const img=c.file&&c.file.preview?'<img src="'+c.file.preview+'" alt="" style="width:100%;height:100%;object-fit:cover">':(c.file&&c.file.kind==="Video"?"▶":"V");
-    return '<article class="vp-card"><div class="vp-badge-top">'+vpEsc(c.badge)+'</div><div class="vp-thumb">'+img+'</div><div class="vp-card-body"><h4>'+vpEsc(c.title)+'</h4><p>'+vpEsc(c.meta)+'</p></div></article>'
+    return '<article class="vp-card"><div class="vp-badge-top">'+vpEsc(c.badge)+'</div><div class="vp-thumb">'+img+'</div><div class="vp-card-body"><h4>'+vpEsc(c.title)+'</h4><p>'+vpEsc(c.meta)+'</p>'+(c.file?'<button class="vp-btn" type="button" style="margin-top:9px;width:100%" onclick="vpSelectMaterialAI('+c.uploadIndex+')">Preparar con Meta AI</button>':'')+'</div></article>'
   }).join("");
   document.getElementById("vp-library-count").textContent=vpState.uploaded.length+" archivos guardados";
 }
@@ -460,9 +461,23 @@ function vpSelectMaterialAI(index){
   const item=vpState.uploaded[index];
   if(!item)return;
   vpOpenAI();
-  vpOpenMaterialAI();
-  document.getElementById("vp-ai-file-name").textContent=item.name;
+  document.getElementById("vp-ai-file-name").textContent=item.name+" · "+item.kind;
+  document.getElementById("vp-ai-prompt").value="Trabajá el archivo \""+item.name+"\" para Vilco. "; 
+  document.getElementById("vp-ai-output").textContent="Archivo seleccionado. Copiá las instrucciones, abrí Meta AI, adjuntá este mismo archivo y pegá el prompt.";
   document.getElementById("vp-ai-prompt").focus();
+}
+function vpOpenMetaAI(){window.open("https://www.meta.ai/","_blank","noopener,noreferrer");}
+function vpSetTask(task){const p=document.getElementById("vp-ai-prompt");p.value=task+". Archivo: "+document.getElementById("vp-ai-file-name").textContent+". ";p.focus();}
+function vpBrandPrompt(){
+  const file=document.getElementById("vp-ai-file-name").textContent;
+  const task=document.getElementById("vp-ai-prompt").value.trim()||"Analizá este material y proponé la mejor forma de editarlo y publicarlo.";
+  return "Actuá como especialista en marketing gastronómico, fotografía y redes sociales para VILCO, parrilla, restaurant y eventos de Laborde, Argentina. Marca: cálida, auténtica, cuidada y gastronómica; evitar resultados artificiales, exceso de filtros o inventar productos, personas, platos, instalaciones o datos. Servicios: parrilla, pastas, pescados y elaborados, salón para hasta 100 personas, catering y barra. Actividad destacada: sábados desde las 21 hs. Objetivos: mostrar la experiencia real del local, generar reservas y consultas por eventos. Archivo de referencia: "+file+". Pedido: "+task+". Respetá el material original y explicá brevemente qué cambios sugerís. Si es una imagen, conservá la comida, las proporciones y los elementos reales; si es video, priorizá un inicio fuerte, ritmo natural y cierre claro. Entregá una propuesta lista para Instagram, con CTA de reserva o consulta cuando corresponda.";
+}
+function vpPrepareBrandPrompt(){document.getElementById("vp-ai-prompt").value=vpBrandPrompt();document.getElementById("vp-ai-output").textContent="Instrucciones de marca preparadas. Podés copiarlas y pegarlas en Meta AI."}
+async function vpCopyBrandPrompt(){
+  const text=vpBrandPrompt();
+  try{await navigator.clipboard.writeText(text);document.getElementById("vp-ai-output").textContent="Instrucciones copiadas. Abrí Meta AI, adjuntá el archivo original y pegá el texto en el chat."}
+  catch(e){const p=document.getElementById("vp-ai-prompt");p.value=text;p.focus();p.select();document.getElementById("vp-ai-output").textContent="Seleccioné las instrucciones para que las copies manualmente. Luego adjuntá el archivo en Meta AI."}
 }
 function vpUseMaterialAI(kind){
   const name=document.getElementById("vp-ai-file-name").textContent;
