@@ -1,9 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "redirects": [
     {
       "source": "/",
-      "destination": "/vilco-v4.html"
+      "destination": "/vilco-v4.html",
+      "permanent": false
     }
   ]
 }
