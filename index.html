@@ -507,7 +507,7 @@ function vpRefreshRealData(){
 }
 function vpLoginOpen(){document.getElementById("vilco-pro-login").style.display="grid";document.getElementById("vilco-pro-app").style.display="none"}
 function vpEnter(){document.getElementById("vilco-pro-login").style.display="none";document.getElementById("vilco-pro-app").style.display="block";document.getElementById("vp-today").textContent=new Intl.DateTimeFormat("es-AR",{weekday:"long",day:"2-digit",month:"long",year:"numeric"}).format(new Date());vpLoad();vpRefreshRealData()}
-document.getElementById("vp-login-form").addEventListener("submit",function(e){e.preventDefault();const pass=document.getElementById("vp-password").value;if(pass==="Vilco2026"){localStorage.setItem("vilco_auth","ok");document.getElementById("vp-login-error").textContent="";vpEnter()}else document.getElementById("vp-login-error").textContent="Clave incorrecta."});
+// El acceso se valida en el servidor mediante /api/login.
 if(localStorage.getItem("vilco_auth")==="ok")vpEnter();else vpLoginOpen();
 document.getElementById("vp-file-input").addEventListener("change",function(){vpAddFiles(this.files);this.value=""});
 const vpDrop=document.getElementById("vp-drop");
