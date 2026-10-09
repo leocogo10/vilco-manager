@@ -282,16 +282,54 @@
       conversation = [];
       messagesEl.innerHTML = '<div class="vpms-empty"><strong>¿Qué hacemos con el contenido de Vilco?</strong>Subí una foto para mejorarla, pedí una idea para un Reel o trabajá el texto de una publicación. Podés seguir ajustando el resultado por mensajes.</div>';
     });
-    fetch("/api/meta-status").then((r) => r.json()).then((data) => {
-      if (data.configured) {
-        statusEl.textContent = "Conectado · Meta Model API";
-        studio.querySelector("#vpms-connection-note").textContent = "La clave está configurada en el servidor. No se expone en el navegador.";
-        studio.querySelector(".vpms-dot").style.background = "#5ba878";
-      } else {
-        statusEl.textContent = "Pendiente de clave de API";
-        studio.querySelector("#vpms-connection-note").textContent = "Falta agregar MODEL_API_KEY en Vercel para activar el chat y la edición.";
-      }
-    }).catch(() => { statusEl.textContent = "No se pudo comprobar la conexión"; });
+    async function checkMetaStatus() {
+      try {
+        const response = await fetch("/api/meta-status", { credentials: "same-origin", cache: "no-store" });
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) {
+          statusEl.textContent = "Iniciá sesión para continuar";
+          if (typeof vpLoginOpen === "function") vpLoginOpen();
+          localStorage.removeItem("vilco_auth");
+          return;
+        }
+        if (!response.ok) throw new Error(data.error || "No se pudo comprobar la conexión.");
+        if (data.configured) {
+          statusEl.textContent = "Conectado · Meta Model API";
+          studio.querySelector("#vpms-connection-note").textContent = "La clave está configurada en el servidor. No se expone en el navegador.";
+          studio.querySelector(".vpms-dot").style.background = "#5ba878";
+        } else {
+          statusEl.textContent = "Pendiente de clave de API";
+          studio.querySelector("#vpms-connection-note").textContent = "Falta agregar MODEL_API_KEY en Vercel para activar el chat y la edición.";
+        }
+      } catch (error) { statusEl.textContent = "No se pudo comprobar la conexión"; }
+    }
+    const loginForm = document.getElementById("vp-login-form");
+    if (loginForm) loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      const password = document.getElementById("vp-password").value;
+      const errorEl = document.getElementById("vp-login-error");
+      const submit = loginForm.querySelector('button[type="submit"]');
+      submit.disabled = true;
+      errorEl.textContent = "Verificando acceso…";
+      try {
+        const response = await fetch("/api/login", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || "No se pudo validar el acceso.");
+        localStorage.setItem("vilco_auth", "ok");
+        errorEl.textContent = "";
+        if (typeof vpEnter === "function") vpEnter();
+        await checkMetaStatus();
+      } catch (error) {
+        errorEl.textContent = error.message || "No se pudo validar el acceso.";
+      } finally { submit.disabled = false; }
+    }, true);
+    checkMetaStatus();
   };
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start);
   else start();
