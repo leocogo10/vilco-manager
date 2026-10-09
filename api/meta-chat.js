@@ -1,9 +1,12 @@
+import { verifySession } from "./_auth.js";
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ error: "Método no permitido." });
   }
-  const apiKey = process.env.MODEL_API_KEY;
+  if (!verifySession(req)) return res.status(401).json({ error: "Tu sesión venció. Volvé a ingresar a VILCO MANAGER." });
+    const apiKey = process.env.MODEL_API_KEY;
   if (!apiKey) {
     return res.status(503).json({
       error: "Falta configurar MODEL_API_KEY en Vercel. La conexión está preparada, pero todavía no puede llamar a Meta Model API."
