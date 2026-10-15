@@ -232,6 +232,9 @@
     window.history.replaceState({}, document.title, window.location.pathname);
     openPanel();
     window.setTimeout(() => setStatus(message, kind), 100);
+  } else if (document.getElementById("vilco-meta-action")) {
+    // On each page load or manual reload, refresh real metrics in the dashboard automatically.
+    refresh();
   }
 })();
 
