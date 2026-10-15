@@ -111,6 +111,8 @@
 
   function updateHeader(data) {
     if (!data?.connected) return;
+    const action = document.getElementById("vilco-meta-action");
+    if (action) action.textContent = "Ver métricas de Meta · conectada";
     const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
     let node;
     while ((node = walker.nextNode())) {
