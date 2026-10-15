@@ -29,7 +29,7 @@ function returnToApp(res, outcome) {
 
 function samePage(page, candidate) {
   const normalize = (value) => String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
-  return String(page.id) === "100083309292219" || normalize(page.name) === normalize("Vilco.Laborde") || normalize(candidate?.username) === normalize("vilco.laborde");
+  return ["100083309292219", "112750308093649"].includes(String(page.id)) || normalize(page.name) === normalize("Vilco.Laborde") || normalize(candidate?.username) === normalize("vilco.laborde");
 }
 
 async function tokenExchange(params) {
@@ -99,7 +99,15 @@ export default async function handler(req, res) {
     const pages = Array.isArray(accounts.data) ? accounts.data : [];
     const preferred = pages.filter((page) => samePage(page, page.instagram_business_account));
     const page = preferred.length === 1 ? preferred[0] : pages.length === 1 ? pages[0] : null;
-    if (!page?.id || !page?.access_token) return returnToApp(res, "page-not-found");
+    if (!page?.id || !page?.access_token) {
+      console.error("VILCO Meta Page lookup:", JSON.stringify({
+        pageCount: pages.length,
+        matchingCount: preferred.length,
+        selectedPage: Boolean(page?.id),
+        hasPageToken: Boolean(page?.access_token),
+      }));
+      return returnToApp(res, "page-not-found");
+    }
     stage = "save-connection";
     await saveMetaConnection({
       token: page.access_token,
