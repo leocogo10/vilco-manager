@@ -218,7 +218,9 @@
   let initialRefreshStarted = false;
   function maybeRefreshOnLoad() {
     if (initialRefreshStarted || new URLSearchParams(window.location.search).has("meta")) return;
-    if (document.getElementById("vilco-gate-form")) return;
+    if (window.__VILCO_BOOT_READY__ !== true) return;
+    const gate = document.getElementById("vilco-gate");
+    if (gate && !gate.hidden) return;
     if (!document.getElementById("vilco-meta-action")) return;
     initialRefreshStarted = true;
     refresh();
@@ -228,7 +230,7 @@
     mountAction();
     maybeRefreshOnLoad();
   });
-  observer.observe(document.documentElement, { childList: true, subtree: true });
+  observer.observe(document.documentElement, { childList: true, subtree: true, attributes: true, attributeFilter: ["hidden"] });
   mountAction();
   maybeRefreshOnLoad();
 
