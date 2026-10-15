@@ -101,12 +101,13 @@ export default async function handler(req, res) {
     let page = preferred.length === 1 ? preferred[0] : pages.length === 1 ? pages[0] : null;
     let directPageMatched = false;
     let directPageError = { name: "", code: 0 };
+    let instagramLookupError = { name: "", code: 0 };
     if (!page?.id || !page?.access_token) {
       stage = "direct-page";
       let directPage = null;
       try {
         directPage = await graphGet("112750308093649", {
-          fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
+          fields: "id,name,access_token",
         }, longToken.access_token);
       } catch (error) {
         directPageError = {
@@ -115,7 +116,19 @@ export default async function handler(req, res) {
         };
       }
       if (directPage?.id && directPage?.access_token) {
-        page = directPage;
+        let instagramAccount = null;
+        try {
+          const instagramData = await graphGet(directPage.id, {
+            fields: "instagram_business_account{id,username}",
+          }, longToken.access_token);
+          instagramAccount = instagramData.instagram_business_account || null;
+        } catch (error) {
+          instagramLookupError = {
+            name: String(error?.name || "Error").slice(0, 40),
+            code: Number(error?.code) || 0,
+          };
+        }
+        page = { ...directPage, instagram_business_account: instagramAccount };
         directPageMatched = true;
       }
     }
@@ -127,6 +140,7 @@ export default async function handler(req, res) {
         hasPageToken: Boolean(page?.access_token),
         directPageMatched,
         directPageError,
+        instagramLookupError,
       }));
       return returnToApp(res, "page-not-found");
     }
