@@ -20,6 +20,7 @@
     .vilco-meta-status[data-kind="error"]{border-color:#623431;color:#ffb4ac}
     .vilco-meta-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px}
     .vilco-meta-card{min-height:76px;padding:12px;border:1px solid #292929;border-radius:10px;background:#151515}
+    .vilco-meta-section-title{grid-column:1/-1;margin:8px 1px 0;color:#c9a86e;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase}
     .vilco-meta-label{color:#aaa;font-size:10px}
     .vilco-meta-value{margin-top:6px;color:#f5f5f0;font-size:18px;font-weight:700;overflow-wrap:anywhere}
     .vilco-meta-actions{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
@@ -95,12 +96,21 @@
   function paintMetrics(data) {
     grid.replaceChildren();
     if (!data?.connected) return;
-    addMetric("Seguidores de Instagram", data.instagram?.followers);
-    addMetric("Publicaciones de Instagram", data.instagram?.mediaCount);
-    addMetric("Vistas de Instagram · 30 días", data.instagram?.views30d);
-    addMetric("Alcance de Instagram · 30 días", data.instagram?.reach30d);
-    addMetric("Me gusta de Facebook", data.page?.likes);
-    addMetric("Interacciones en Facebook · 30 días", data.page?.engagements30d);
+    function addSection(label) {
+      const title = document.createElement("div");
+      title.className = "vilco-meta-section-title";
+      title.textContent = label;
+      grid.appendChild(title);
+    }
+    addSection("Instagram · @" + (data.instagram?.username || "Vilco"));
+    addMetric("Seguidores", data.instagram?.followers);
+    addMetric("Publicaciones", data.instagram?.mediaCount);
+    addMetric("Vistas · 30 días", data.instagram?.views30d);
+    addMetric("Alcance · 30 días", data.instagram?.reach30d);
+    addSection("Facebook · " + (data.page?.name || "Página"));
+    addMetric("Me gusta de la página", data.page?.likes);
+    addMetric("Vistas únicas de contenido · 30 días", data.page?.views30d);
+    addMetric("Interacciones en publicaciones · 30 días", data.page?.engagements30d);
     if (data.fetchedAt) {
       const date = new Date(data.fetchedAt);
       setStatus(`Conectada con ${data.page?.name || "Facebook"}${data.instagram?.username ? " e Instagram @" + data.instagram.username : ""}. Actualizado ${date.toLocaleString("es-AR", { dateStyle: "short", timeStyle: "short" })}.`, "ok");
