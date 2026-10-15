@@ -185,9 +185,10 @@
     if (description && description.textContent !== descriptionText) description.textContent = descriptionText;
     const oldCopyButton = Array.from(found.panel.querySelectorAll("button")).find((item) => item.textContent.trim() === "Copiar plan 30 días");
     if (oldCopyButton) oldCopyButton.remove();
-    const autoLabel = Array.from(found.panel.querySelectorAll("div,span")).find((item) => item.childElementCount === 0 && item.textContent.trim() === "v4 persistente • auto-plan IA");
+    const autoLabel = Array.from(found.panel.querySelectorAll("div,span")).find((item) => item.childElementCount === 0 && ["v4 persistente • auto-plan IA", "Planificación con ayuda de IA"].includes(item.textContent.trim()));
     if (autoLabel) autoLabel.textContent = "Agenda compartida";
     found.grid.hidden = true;
+    found.grid.style.display = "none";
     if (!ui.isConnected) found.grid.after(ui);
     activeUi = ui;
   }
