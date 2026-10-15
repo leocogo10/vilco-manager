@@ -215,9 +215,22 @@
     return false;
   }
 
-  const observer = new MutationObserver(() => { mountAction(); });
+  let initialRefreshStarted = false;
+  function maybeRefreshOnLoad() {
+    if (initialRefreshStarted || new URLSearchParams(window.location.search).has("meta")) return;
+    if (document.getElementById("vilco-gate-form")) return;
+    if (!document.getElementById("vilco-meta-action")) return;
+    initialRefreshStarted = true;
+    refresh();
+  }
+
+  const observer = new MutationObserver(() => {
+    mountAction();
+    maybeRefreshOnLoad();
+  });
   observer.observe(document.documentElement, { childList: true, subtree: true });
   mountAction();
+  maybeRefreshOnLoad();
 
   const outcome = new URLSearchParams(window.location.search).get("meta");
   if (outcome) {
@@ -232,9 +245,6 @@
     window.history.replaceState({}, document.title, window.location.pathname);
     openPanel();
     window.setTimeout(() => setStatus(message, kind), 100);
-  } else if (document.getElementById("vilco-meta-action")) {
-    // On each page load or manual reload, refresh real metrics in the dashboard automatically.
-    refresh();
   }
 })();
 
