@@ -130,14 +130,14 @@
     const root = document.getElementById("root");
     if (!root) return null;
     const heading = Array.from(root.querySelectorAll("h2")).find((item) =>
-      item.dataset.vilcoCalendarTitle === "true" || item.textContent.trim().startsWith("Calendario 30 días")
+      item.dataset.vilcoCalendarTitle === "true" || item.textContent.trim().startsWith("Calendario de contenido")
     );
     if (!heading) return null;
     const main = heading.closest("main");
     const panel = main && main.firstElementChild;
     if (!panel) return null;
     const grid = Array.from(panel.children).find((item) => item.classList.contains("grid") && item.children.length > 20);
-    return grid ? { heading, main, panel, grid } : null;
+    return panel ? { heading, main, panel, grid } : null;
   }
 
   function makeCalendarUi() {
@@ -187,9 +187,13 @@
     if (oldCopyButton) oldCopyButton.remove();
     const autoLabel = Array.from(found.panel.querySelectorAll("div,span")).find((item) => item.childElementCount === 0 && ["v4 persistente • auto-plan IA", "Planificación con ayuda de IA"].includes(item.textContent.trim()));
     if (autoLabel) autoLabel.textContent = "Agenda compartida";
-    found.grid.hidden = true;
-    found.grid.style.display = "none";
-    if (!ui.isConnected) found.grid.after(ui);
+    if (found.grid) {
+      found.grid.hidden = true;
+      found.grid.style.display = "none";
+      if (!ui.isConnected) found.grid.after(ui);
+    } else if (!ui.isConnected) {
+      found.panel.append(ui);
+    }
     activeUi = ui;
   }
 
