@@ -37,7 +37,11 @@ async function tokenExchange(params) {
   for (const [key, value] of Object.entries(params)) url.searchParams.set(key, String(value));
   const response = await fetch(url, { headers: { Accept: "application/json" }, cache: "no-store", signal: AbortSignal.timeout(12000) });
   const data = await response.json().catch(() => ({}));
-  if (!response.ok || !data.access_token) throw new Error("Meta rechazó el intercambio de autorización.");
+  if (!response.ok || !data.access_token) {
+    const error = new Error("Meta rechazó el intercambio de autorización.");
+    error.code = Number(data.error?.code) || response.status;
+    throw error;
+  }
   return data;
 }
 
@@ -64,19 +68,23 @@ export default async function handler(req, res) {
     return returnToApp(res, "state-error");
   }
 
+  let stage = "short-token";
   try {
+    stage = "short-token";
     const appToken = await tokenExchange({
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
       redirect_uri: process.env.META_REDIRECT_URI,
       code,
     });
+    stage = "long-token";
     const longToken = await tokenExchange({
       grant_type: "fb_exchange_token",
       client_id: process.env.META_APP_ID,
       client_secret: process.env.META_APP_SECRET,
       fb_exchange_token: appToken.access_token,
     });
+    stage = "list-pages";
     const accounts = await graphGet("me/accounts", {
       fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
       limit: 100,
@@ -85,6 +93,7 @@ export default async function handler(req, res) {
     const preferred = pages.filter((page) => samePage(page, page.instagram_business_account));
     const page = preferred.length === 1 ? preferred[0] : pages.length === 1 ? pages[0] : null;
     if (!page?.id || !page?.access_token) return returnToApp(res, "page-not-found");
+    stage = "save-connection";
     await saveMetaConnection({
       token: page.access_token,
       pageId: page.id,
@@ -94,7 +103,7 @@ export default async function handler(req, res) {
     });
     return returnToApp(res, "connected");
   } catch (error) {
-    console.error("VILCO Meta OAuth failed:", error?.name || "Error", Number(error?.code) || 0);
+    console.error("VILCO Meta OAuth failed:", stage, error?.name || "Error", Number(error?.code) || 0);
     return returnToApp(res, "connection-error");
   }
 }
