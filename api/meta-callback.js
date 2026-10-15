@@ -98,13 +98,25 @@ export default async function handler(req, res) {
     }, longToken.access_token);
     const pages = Array.isArray(accounts.data) ? accounts.data : [];
     const preferred = pages.filter((page) => samePage(page, page.instagram_business_account));
-    const page = preferred.length === 1 ? preferred[0] : pages.length === 1 ? pages[0] : null;
+    let page = preferred.length === 1 ? preferred[0] : pages.length === 1 ? pages[0] : null;
+    let directPageMatched = false;
+    if (!page?.id || !page?.access_token) {
+      stage = "direct-page";
+      const directPage = await graphGet("112750308093649", {
+        fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
+      }, longToken.access_token).catch(() => null);
+      if (directPage?.id && directPage?.access_token) {
+        page = directPage;
+        directPageMatched = true;
+      }
+    }
     if (!page?.id || !page?.access_token) {
       console.error("VILCO Meta Page lookup:", JSON.stringify({
         pageCount: pages.length,
         matchingCount: preferred.length,
         selectedPage: Boolean(page?.id),
         hasPageToken: Boolean(page?.access_token),
+        directPageMatched,
       }));
       return returnToApp(res, "page-not-found");
     }
