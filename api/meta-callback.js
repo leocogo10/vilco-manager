@@ -102,9 +102,18 @@ export default async function handler(req, res) {
     let directPageMatched = false;
     if (!page?.id || !page?.access_token) {
       stage = "direct-page";
-      const directPage = await graphGet("112750308093649", {
-        fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
-      }, longToken.access_token).catch(() => null);
+      let directPage = null;
+      let directPageError = { name: "", code: 0 };
+      try {
+        directPage = await graphGet("112750308093649", {
+          fields: "id,name,access_token,tasks,instagram_business_account{id,username}",
+        }, longToken.access_token);
+      } catch (error) {
+        directPageError = {
+          name: String(error?.name || "Error").slice(0, 40),
+          code: Number(error?.code) || 0,
+        };
+      }
       if (directPage?.id && directPage?.access_token) {
         page = directPage;
         directPageMatched = true;
@@ -117,6 +126,7 @@ export default async function handler(req, res) {
         selectedPage: Boolean(page?.id),
         hasPageToken: Boolean(page?.access_token),
         directPageMatched,
+        directPageError,
       }));
       return returnToApp(res, "page-not-found");
     }
