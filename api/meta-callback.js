@@ -40,6 +40,13 @@ async function tokenExchange(params) {
   if (!response.ok || !data.access_token) {
     const error = new Error("Meta rechazó el intercambio de autorización.");
     error.code = Number(data.error?.code) || response.status;
+    error.meta = {
+      httpStatus: response.status,
+      type: String(data.error?.type || "").slice(0, 60),
+      code: Number(data.error?.code) || 0,
+      subcode: Number(data.error?.error_subcode) || 0,
+      isTransient: Boolean(data.error?.is_transient),
+    };
     throw error;
   }
   return data;
@@ -103,7 +110,17 @@ export default async function handler(req, res) {
     });
     return returnToApp(res, "connected");
   } catch (error) {
-    console.error("VILCO Meta OAuth failed:", stage, error?.name || "Error", Number(error?.code) || 0);
+    const details = error?.meta || {};
+    console.error("VILCO Meta OAuth failed:", stage, error?.name || "Error", JSON.stringify({
+      httpStatus: Number(details.httpStatus) || 0,
+      type: String(details.type || "").slice(0, 60),
+      code: Number(details.code) || Number(error?.code) || 0,
+      subcode: Number(details.subcode) || 0,
+      isTransient: Boolean(details.isTransient),
+      hasAppId: Boolean(process.env.META_APP_ID),
+      hasAppSecret: Boolean(process.env.META_APP_SECRET),
+      hasRedirectUri: Boolean(process.env.META_REDIRECT_URI),
+    }));
     return returnToApp(res, "connection-error");
   }
 }
