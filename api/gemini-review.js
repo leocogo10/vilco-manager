@@ -84,7 +84,6 @@ async function loadAsset(asset, remainingBytes) {
     error.code = "STORAGE";
     throw error;
   }
-  const reportedLength = Number(response.headers.get("content-length") || 0);
   if (reportedLength && reportedLength > remainingBytes) {
     const error = new Error("limit");
     error.code = "LIMIT";
