@@ -1,5 +1,7 @@
 import crypto from "node:crypto";
 import { verifySession } from "./_auth.js";
+import { usesNeonBackend } from "./_db.js";
+import { configureUploadCors, createDownloadUrl, createUploadUrl } from "./_storage.js";
 
 const SUPABASE_URL = "https://budnbinxfwgkcfgawlsa.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -68,8 +70,8 @@ export default async function handler(req, res) {
     return replyError(res, 405, "Método no permitido.");
   }
   if (!verifySession(req)) return replyError(res, 401, "Ingresá la contraseña de VILCO para continuar.");
-  if (!SUPABASE_SERVICE_ROLE_KEY) {
-    return replyError(res, 503, "Falta configurar SUPABASE_SERVICE_ROLE_KEY en el entorno seguro de Vercel.");
+  if (!usesNeonBackend() && !SUPABASE_SERVICE_ROLE_KEY) {
+    return replyError(res, 503, "Falta configurar el almacenamiento seguro de VILCO en Vercel.");
   }
 
   const action = req.body && req.body.action;
@@ -84,16 +86,21 @@ export default async function handler(req, res) {
       }
 
       const path = "uploads/" + crypto.randomUUID() + "-" + name;
+      if (usesNeonBackend()) {
+        const origin = String(req.headers.origin || "");
+        await configureUploadCors(origin);
+        const uploadUrl = await createUploadUrl(path, type);
+        return res.status(200).json({ path, uploadUrl, contentType: type, storageProvider: "neon" });
+      }
+
       const data = await storageJson("/object/upload/sign/" + BUCKET + "/" + encodePath(path), {});
       let uploadUrl = absoluteStorageUrl(data.signedUrl || data.signedURL || data.url);
       const token = data.token || (uploadUrl ? new URL(uploadUrl).searchParams.get("token") : "");
       if (!token) return replyError(res, 502, "No se pudo preparar la carga del archivo.");
-      if (!uploadUrl) {
-        uploadUrl = STORAGE_ROOT + "/object/upload/sign/" + BUCKET + "/" + encodePath(path);
-      }
+      if (!uploadUrl) uploadUrl = STORAGE_ROOT + "/object/upload/sign/" + BUCKET + "/" + encodePath(path);
       const upload = new URL(uploadUrl);
       upload.searchParams.set("token", token);
-      return res.status(200).json({ path, uploadUrl: upload.toString() });
+      return res.status(200).json({ path, uploadUrl: upload.toString(), storageProvider: "supabase" });
     }
 
     if (action === "sign") {
@@ -106,8 +113,12 @@ export default async function handler(req, res) {
       for (let start = 0; start < paths.length; start += 10) {
         const group = paths.slice(start, start + 10);
         const results = await Promise.all(group.map(async (path) => {
-          try { return [path, await signOne(path), null]; }
-          catch { return [path, "", "No se pudo abrir este archivo."]; }
+          try {
+            const url = usesNeonBackend() ? await createDownloadUrl(path) : await signOne(path);
+            return [path, url, null];
+          } catch {
+            return [path, "", "No se pudo abrir este archivo."];
+          }
         }));
         for (const [path, url, error] of results) {
           if (url) urls[path] = url;

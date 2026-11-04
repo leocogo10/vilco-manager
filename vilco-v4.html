@@ -60,7 +60,7 @@
   var syncTimer = null;
   var syncBusy = false;
   var pendingValue = null;
-  var lastSeen = null;
+  var lastSeen = null; var lastRevision = null;
 
   window.__VILCO_BOOT_READY__ = false;
 
@@ -122,25 +122,7 @@
     return new Blob([decodeURIComponent(data)], { type: type });
   }
 
-  async function uploadBlob(blob, name, type) {
-    var prepared = await api("/api/media", {
-      method: "POST",
-      body: JSON.stringify({ action: "prepare-upload", name: name, type: type || blob.type, size: blob.size })
-    });
-    var formData = new FormData();
-    formData.append("cacheControl", "3600");
-    formData.append("", blob, name || "archivo");
-    var upload = await fetch(prepared.uploadUrl, { method: "PUT", body: formData });
-    if (!upload.ok) throw new Error("No se pudo subir " + (name || "el archivo") + " a la nube.");
-    var signed = await api("/api/media", {
-      method: "POST",
-      body: JSON.stringify({ action: "sign", paths: [prepared.path] })
-    });
-    if (!signed.urls || !signed.urls[prepared.path]) throw new Error("El archivo se subió, pero no se pudo preparar su vista previa.");
-    return { url: signed.urls[prepared.path], storagePath: prepared.path };
-  }
-
-  async function uploadInlineMedia(state) {
+  async function uploadBlob(blob, name, type) { var mime = type || blob.type || "application/octet-stream"; var prepared = await api("/api/media", { method: "POST", body: JSON.stringify({ action: "prepare-upload", name: name, type: mime, size: blob.size }) }); var upload; if (prepared.storageProvider === "neon") { upload = await fetch(prepared.uploadUrl, { method: "PUT", headers: { "Content-Type": prepared.contentType || mime }, body: blob }); } else { var formData = new FormData(); formData.append("cacheControl", "3600"); formData.append("", blob, name || "archivo"); upload = await fetch(prepared.uploadUrl, { method: "PUT", body: formData }); } if (!upload.ok) throw new Error("No se pudo subir " + (name || "el archivo") + " a la nube."); var signed = await api("/api/media", { method: "POST", body: JSON.stringify({ action: "sign", paths: [prepared.path] }) }); if (!signed.urls || !signed.urls[prepared.path]) throw new Error("El archivo se subió, pero no se pudo preparar su vista previa."); return { url: signed.urls[prepared.path], storagePath: prepared.path }; } async function uploadInlineMedia(state) {
     if (!state || typeof state !== "object") return false;
     var items = Array.isArray(state.items) ? state.items : [];
     var mediaItems = items.filter(function(item) {
@@ -190,31 +172,7 @@
     return { state: state, migrated: migrated, signedChanged: signedChanged };
   }
 
-  async function sendState(value) {
-    if (!syncEnabled || syncBusy) { pendingValue = value; return; }
-    syncBusy = true;
-    try {
-      var state = JSON.parse(value);
-      var migrated = await uploadInlineMedia(state);
-      if (migrated) writeLocalState(state);
-      var result = await api("/api/state", { method: "POST", body: JSON.stringify({ state: state }) });
-      lastSeen = result.updatedAt || lastSeen;
-      setSync("✓ Guardado en la nube");
-    } catch (error) {
-      if (error.status === 401) { window.location.reload(); return; }
-      setSync("⚠ No se pudo sincronizar");
-      console.warn("VILCO cloud sync:", error.message);
-    } finally {
-      syncBusy = false;
-      if (pendingValue !== null) {
-        var next = pendingValue;
-        pendingValue = null;
-        scheduleSync(next);
-      }
-    }
-  }
-
-  function scheduleSync(value) {
+  async function sendState(value) { if (!syncEnabled || syncBusy) { pendingValue = value; return; } syncBusy = true; try { var state = JSON.parse(value); var migrated = await uploadInlineMedia(state); if (migrated) writeLocalState(state); var result = await api("/api/state", { method: "POST", body: JSON.stringify({ state: state, expectedUpdatedAt: lastSeen, expectedRevision: lastRevision }) }); lastSeen = result.updatedAt || lastSeen; if (result.revision != null) lastRevision = String(result.revision); setSync("✓ Guardado en la nube"); } catch (error) { if (error.status === 401) { window.location.reload(); return; } if (error.status === 409) { pendingValue = null; try { localStorage.setItem("vilco_conflict_backup", value); var remote = await api("/api/state"); setSync("Conflicto: descargar copia y actualizar", function() { try { var local = JSON.parse(localStorage.getItem("vilco_conflict_backup") || value); var backup = { items: local.items || [], customFolders: local.customFolders || [], recordedIds: local.recordedIds || [], aiMessages: local.aiMessages || [], exportedAt: new Date().toISOString(), version: local.v || "VILCO" }; var blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }); var link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = "vilco-respaldo-conflicto-" + new Date().toISOString().slice(0, 10) + ".json"; link.click(); setTimeout(function(){ URL.revokeObjectURL(link.href); }, 1000); } catch {} applyRemoteState(remote); }); } catch (readError) { setSync("Conflicto: conservé una copia local; recargá cuando tengas conexión"); } } else { setSync("⚠ No se pudo sincronizar"); console.warn("VILCO cloud sync:", error.message); } } finally { syncBusy = false; if (pendingValue !== null) { var next = pendingValue; pendingValue = null; scheduleSync(next); } } } function scheduleSync(value) {
     pendingValue = value;
     setSync("Guardando en la nube…");
     clearTimeout(syncTimer);
@@ -236,7 +194,7 @@
       setSync("Cargando cambios de otro dispositivo…");
       var prepared = await prepareState(remote.state);
       writeLocalState(prepared.state);
-      lastSeen = remote.updatedAt || lastSeen;
+      lastSeen = remote.updatedAt || lastSeen; if (remote.revision != null) lastRevision = String(remote.revision);
       window.location.reload();
     } catch (error) {
       setSync("⚠ No se pudo cargar la actualización");
@@ -244,19 +202,7 @@
     }
   }
 
-  function watchRemoteChanges() {
-    setInterval(function() {
-      if (!syncEnabled || syncBusy || pendingValue !== null) return;
-      api("/api/state").then(function(remote) {
-        if (!remote.updatedAt || remote.updatedAt === lastSeen) return;
-        setSync("Hay cambios de otro dispositivo · actualizar", function(){ applyRemoteState(remote); });
-      }).catch(function(error) {
-        if (error.status === 401) setSync("Sesión vencida · recargá para ingresar");
-      });
-    }, 5000);
-  }
-
-  async function startApp(remote) {
+  function watchRemoteChanges() { var check = function() { if (!syncEnabled || syncBusy || pendingValue !== null || document.visibilityState === "hidden") return; api("/api/state").then(function(remote) { var changed = remote.revision != null ? String(remote.revision) !== String(lastRevision) : remote.updatedAt && remote.updatedAt !== lastSeen; if (!remote.updatedAt || !changed) return; setSync("Hay cambios de otro dispositivo · actualizar", function(){ applyRemoteState(remote); }); }).catch(function(error) { if (error.status === 401) setSync("Sesión vencida · recargá para ingresar"); }); }; setInterval(check, 60000); window.addEventListener("focus", check); document.addEventListener("visibilitychange", function(){ if (document.visibilityState === "visible") check(); }); } async function startApp(remote) {
     var local = readLocalState();
     var localTime = local && Date.parse(local.savedAt || "") || 0;
     var remoteTime = remote && Date.parse(remote.updatedAt || "") || 0;
@@ -264,11 +210,11 @@
     var state = useLocal ? local : remote && remote.state;
     var prepared = await prepareState(state);
     if (prepared.state) writeLocalState(prepared.state);
-    lastSeen = remote && remote.updatedAt || null;
+    lastSeen = remote && remote.updatedAt || null; lastRevision = remote && remote.revision != null ? String(remote.revision) : null;
 
     if (prepared.state && (useLocal || prepared.migrated || !remote || !remote.state)) {
-      var saved = await api("/api/state", { method: "POST", body: JSON.stringify({ state: prepared.state }) });
-      lastSeen = saved.updatedAt || lastSeen;
+      var saved = await api("/api/state", { method: "POST", body: JSON.stringify({ state: prepared.state, expectedUpdatedAt: lastSeen, expectedRevision: lastRevision }) });
+      lastSeen = saved.updatedAt || lastSeen; if (saved.revision != null) lastRevision = String(saved.revision);
     }
 
     syncEnabled = true;

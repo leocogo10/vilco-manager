@@ -1,5 +1,6 @@
 import { randomUUID } from "node:crypto";
 import { verifySession } from "./_auth.js";
+import { getDatabase, usesNeonBackend } from "./_db.js";
 
 const SUPABASE_URL = "https://budnbinxfwgkcfgawlsa.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -79,11 +80,13 @@ export default async function handler(req, res) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
   res.setHeader("Vary", "Cookie");
   if (!verifySession(req)) return replyError(res, 401, "Tu sesión de VILCO venció. Ingresá de nuevo para abrir el calendario.");
-  if (!SUPABASE_SERVICE_ROLE_KEY) return replyError(res, 503, "El almacenamiento compartido de VILCO no está configurado.");
+  if (!usesNeonBackend() && !SUPABASE_SERVICE_ROLE_KEY) return replyError(res, 503, "El almacenamiento compartido de VILCO no está configurado.");
 
   if (req.method === "GET") {
     try {
-      const rows = await readRows(TABLE_URL + "?select=id,day,content,created_at&order=day.asc,created_at.asc&limit=1000");
+      const rows = usesNeonBackend()
+        ? await getDatabase()`SELECT id, day, content, created_at FROM public.calendar_items ORDER BY day ASC, created_at ASC LIMIT 1000`
+        : await readRows(TABLE_URL + "?select=id,day,content,created_at&order=day.asc,created_at.asc&limit=1000");
       return res.status(200).json({ items: rows.map(normalizeRow) });
     } catch {
       return replyError(res, 502, "No se pudo cargar el calendario compartido. Probá actualizar la página.");
@@ -94,10 +97,11 @@ export default async function handler(req, res) {
     const id = String(req.body && req.body.id || "");
     if (!ID_PATTERN.test(id)) return replyError(res, 400, "La publicación seleccionada no es válida.");
     try {
-      const rows = await readRows(TABLE_URL + "?id=eq." + encodeURIComponent(id) + "&select=id", {
-        method: "DELETE",
-        prefer: "return=representation",
-      });
+      const rows = usesNeonBackend()
+        ? await getDatabase()`DELETE FROM public.calendar_items WHERE id = ${id}::uuid RETURNING id`
+        : await readRows(TABLE_URL + "?id=eq." + encodeURIComponent(id) + "&select=id", {
+            method: "DELETE", prefer: "return=representation",
+          });
       if (!rows.length) return replyError(res, 404, "La publicación ya no existe en el calendario.");
       return res.status(200).json({ ok: true });
     } catch {
@@ -120,16 +124,32 @@ export default async function handler(req, res) {
 
   try {
     const isUpdate = req.method === "PATCH";
-    const url = isUpdate ? TABLE_URL + "?id=eq." + encodeURIComponent(id) + "&select=id,day,content,created_at" : TABLE_URL + "?select=id,day,content,created_at";
-    const rows = await readRows(url, {
-      method: isUpdate ? "PATCH" : "POST",
-      prefer: "return=representation",
-      body: JSON.stringify(isUpdate ? payload : { ...payload, id: randomUUID() }),
-    });
+    let rows;
+    if (usesNeonBackend()) {
+      const sql = getDatabase();
+      if (isUpdate) {
+        rows = await sql`UPDATE public.calendar_items
+          SET day = ${payload.day}, content = ${payload.content}
+          WHERE id = ${id}::uuid
+          RETURNING id, day, content, created_at`;
+      } else {
+        rows = await sql`INSERT INTO public.calendar_items (id, day, content)
+          VALUES (${randomUUID()}, ${payload.day}, ${payload.content})
+          RETURNING id, day, content, created_at`;
+      }
+    } else {
+      const url = isUpdate
+        ? TABLE_URL + "?id=eq." + encodeURIComponent(id) + "&select=id,day,content,created_at"
+        : TABLE_URL + "?select=id,day,content,created_at";
+      rows = await readRows(url, {
+        method: isUpdate ? "PATCH" : "POST",
+        prefer: "return=representation",
+        body: JSON.stringify(isUpdate ? payload : { ...payload, id: randomUUID() }),
+      });
+    }
     if (!rows.length) return replyError(res, 404, "No se encontró la publicación para guardar.");
     return res.status(isUpdate ? 200 : 201).json({ item: normalizeRow(rows[0]) });
   } catch {
     return replyError(res, 502, "No se pudo guardar en la nube. Tus cambios anteriores siguen guardados.");
   }
 }
-
