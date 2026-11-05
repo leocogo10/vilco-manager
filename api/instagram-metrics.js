@@ -1,11 +1,11 @@
-import { verifySession } from "./_auth.js";
+import { verifySession } from "../lib/auth.js";
 import {
   decryptConnectionToken, getInstagramConnection, getInstagramSnapshotHistory, getLatestInstagramSnapshot,
   graphGet, InstagramApiError, instagramEnvironmentStatus, noteInstagramSyncAttempt,
   noteInstagramSyncSuccess, publicInstagramConnection, publicInstagramSnapshot,
   saveInstagramSnapshot, setInstagramConnectionStatus,
-} from "./_instagram.js";
-import { metricSeries, metricValue } from "./_instagram-core.js";
+} from "../lib/instagram.js";
+import { metricSeries, metricValue } from "../lib/instagram-core.js";
 
 const CACHE_MAX_AGE_MS = 6 * 60 * 60 * 1000;
 const MIN_ATTEMPT_GAP_MS = 5 * 60 * 1000;

@@ -1,4 +1,4 @@
-import { checkPassword, createSessionCookie } from "./_auth.js";
+import { checkPassword, createSessionCookie } from "../lib/auth.js";
 
 export default function handler(req, res) {
   if (req.method !== "POST") {

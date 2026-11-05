@@ -4,7 +4,7 @@ import {
   buildUnifiedInstagramLoginUrl, createInstagramOAuthState, decryptInstagramToken,
   encryptInstagramToken, metricValue, normalizeInstagramUsername,
   validTokenEncryptionKey, verifyInstagramOAuthState,
-} from "../api/_instagram-core.js";
+} from "../lib/instagram-core.js";
 
 const key = Buffer.alloc(32, 7).toString("base64");
 

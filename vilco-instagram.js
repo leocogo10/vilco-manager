@@ -168,7 +168,7 @@
     view.error = "";
     render();
     try {
-      var response = await fetch("/api/instagram-connect", {
+      var response = await fetch("/api/instagram-connection?action=connect", {
         credentials: "same-origin", cache: "no-store", headers: { Accept: "application/json" }
       });
       var payload = await response.json().catch(function () { return {}; });
@@ -186,7 +186,7 @@
     view.loading = true;
     render();
     try {
-      var response = await fetch("/api/instagram-disconnect", {
+      var response = await fetch("/api/instagram-connection", {
         method: "POST", credentials: "same-origin", cache: "no-store",
         headers: { Accept: "application/json", "Content-Type": "application/json" }, body: "{}"
       });

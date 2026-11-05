@@ -1,5 +1,5 @@
-import { verifySession } from "./_auth.js";
-import { getDatabase, usesNeonBackend } from "./_db.js";
+import { verifySession } from "../lib/auth.js";
+import { getDatabase, usesNeonBackend } from "../lib/db.js";
 
 const SUPABASE_URL = "https://budnbinxfwgkcfgawlsa.supabase.co";
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;

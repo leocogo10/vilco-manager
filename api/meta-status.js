@@ -1,4 +1,4 @@
-import { verifySession } from "./_auth.js";
+import { verifySession } from "../lib/auth.js";
 
 export default function handler(req, res) {
   if (req.method !== "GET") {

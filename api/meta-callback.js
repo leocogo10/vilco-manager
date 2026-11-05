@@ -1,5 +1,5 @@
-import { exchangeInstagramCode, graphGet, instagramEnvironmentStatus, saveInstagramConnection } from "./_instagram.js";
-import { normalizeInstagramUsername, TARGET_INSTAGRAM_USERNAME, verifyInstagramOAuthState } from "./_instagram-core.js";
+import { exchangeInstagramCode, graphGet, instagramEnvironmentStatus, saveInstagramConnection } from "../lib/instagram.js";
+import { normalizeInstagramUsername, TARGET_INSTAGRAM_USERNAME, verifyInstagramOAuthState } from "../lib/instagram-core.js";
 
 function readCookie(req, name) {
   const item = (req.headers.cookie || "").split(";").map((value) => value.trim()).find((value) => value.startsWith(name + "="));
