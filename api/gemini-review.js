@@ -1,4 +1,6 @@
-import { verifySession } from "./_auth.js";
+import { verifySession } from "../lib/auth.js";
+import { usesNeonBackend } from "../lib/db.js";
+import { getPrivateObject } from "../lib/storage.js";
 
 const SUPABASE_URL = "https://budnbinxfwgkcfgawlsa.supabase.co";
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -53,25 +55,41 @@ async function loadAsset(asset, remainingBytes) {
     throw error;
   }
   const objectPath = asset.storagePath.slice("uploads/".length);
-  const url = SUPABASE_URL + "/storage/v1/object/authenticated/" + BUCKET + "/" + encodePath("uploads/" + objectPath);
-  const response = await fetch(url, {
-    headers: { apikey: SERVICE_KEY, Authorization: "Bearer " + SERVICE_KEY },
-    cache: "no-store",
-    signal: AbortSignal.timeout(30000)
-  });
-  if (!response.ok) {
-    console.error("VILCO selected media fetch failed:", response.status);
+  let body;
+  let reportedLength = 0;
+  try {
+    if (usesNeonBackend()) {
+      const stored = await getPrivateObject("uploads/" + objectPath);
+      body = stored.Body;
+      reportedLength = Number(stored.ContentLength || 0);
+    } else {
+      const url = SUPABASE_URL + "/storage/v1/object/authenticated/" + BUCKET + "/" + encodePath("uploads/" + objectPath);
+      const response = await fetch(url, {
+        headers: { apikey: SERVICE_KEY, Authorization: "Bearer " + SERVICE_KEY },
+        cache: "no-store",
+        signal: AbortSignal.timeout(30000)
+      });
+      if (!response.ok) {
+        console.error("VILCO selected media fetch failed:", response.status);
+        const error = new Error("storage_fetch");
+        error.code = "STORAGE";
+        throw error;
+      }
+      body = response.body;
+      reportedLength = Number(response.headers.get("content-length") || 0);
+    }
+  } catch (cause) {
+    if (cause?.code === "LIMIT") throw cause;
     const error = new Error("storage_fetch");
     error.code = "STORAGE";
     throw error;
   }
-  const reportedLength = Number(response.headers.get("content-length") || 0);
   if (reportedLength && reportedLength > remainingBytes) {
     const error = new Error("limit");
     error.code = "LIMIT";
     throw error;
   }
-  const bytes = await readLimited(response, remainingBytes);
+  const bytes = await readLimited(body, remainingBytes);
   return {
     mimeType,
     displayName: String(asset.name || "material").slice(0, 120),
@@ -117,7 +135,7 @@ export default async function handler(req, res) {
     return replyError(res, 405, "Método no permitido.");
   }
   if (!verifySession(req)) return replyError(res, 401, "Ingresá la contraseña de VILCO para analizar material.");
-  if (!SERVICE_KEY) return replyError(res, 503, "El almacenamiento seguro de VILCO no está configurado.");
+  if (!usesNeonBackend() && !SERVICE_KEY) return replyError(res, 503, "El almacenamiento seguro de VILCO no está configurado.");
   if (!GEMINI_API_KEY) return replyError(res, 503, "Falta GEMINI_API_KEY en las variables de entorno de Vercel Production. El análisis todavía no está activado.");
 
   const body = req.body || {};

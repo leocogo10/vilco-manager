@@ -1,4 +1,5 @@
-import { verifySession } from "./_auth.js";
+import { verifySession } from "../lib/auth.js";
+import { getDatabase, usesNeonBackend } from "../lib/db.js";
 
 const SUPABASE_URL = "https://budnbinxfwgkcfgawlsa.supabase.co";
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -33,6 +34,11 @@ function databaseHeaders(prefer) {
 }
 
 async function readConversation() {
+  if (usesNeonBackend()) {
+    const rows = await getDatabase()`SELECT messages, updated_at FROM public.vilco_meta_chat WHERE id = true LIMIT 1`;
+    if (!rows[0]) throw new Error("database_missing");
+    return rows[0];
+  }
   const response = await fetch(ROW_URL + "?id=eq.true&select=messages,updated_at", {
     headers: databaseHeaders(),
     cache: "no-store"
@@ -44,6 +50,12 @@ async function readConversation() {
 }
 
 async function readMarketingProfile() {
+  if (usesNeonBackend()) {
+    const rows = await getDatabase()`SELECT content FROM public.vilco_marketing_profile WHERE id = true LIMIT 1`;
+    const content = rows[0] && rows[0].content;
+    if (typeof content !== "string" || !content.trim()) throw new Error("profile_missing");
+    return content;
+  }
   const response = await fetch(PROFILE_URL + "?id=eq.true&select=content", {
     headers: databaseHeaders(),
     cache: "no-store"
@@ -98,6 +110,13 @@ async function callMeta(messages, marketingProfile) {
 }
 
 async function saveConversation(messages, previousUpdatedAt) {
+  if (usesNeonBackend()) {
+    const rows = await getDatabase()`UPDATE public.vilco_meta_chat
+      SET messages = ${JSON.stringify(messages)}::jsonb, updated_at = now()
+      WHERE id = true AND updated_at = ${previousUpdatedAt}::timestamptz
+      RETURNING updated_at`;
+    return rows[0] || null;
+  }
   const query = "?id=eq.true&updated_at=eq." + encodeURIComponent(previousUpdatedAt) + "&select=updated_at";
   const response = await fetch(ROW_URL + query, {
     method: "PATCH",
@@ -121,7 +140,7 @@ export default async function handler(req, res) {
     res.setHeader("Allow", "GET, POST");
     return replyError(res, 405, "Método no permitido.");
   }
-  if (!SERVICE_KEY) return replyError(res, 503, "Falta configurar el almacenamiento seguro del espacio VILCO.");
+  if (!usesNeonBackend() && !SERVICE_KEY) return replyError(res, 503, "Falta configurar el almacenamiento seguro del espacio VILCO.");
 
   try {
     if (req.method === "GET") {
